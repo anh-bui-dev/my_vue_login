@@ -1,8 +1,8 @@
 /* eslint-disable */
 <template>
-  <div id="container">
-    <div id="login">
-      <h1>New Password</h1>
+  <div class="container">
+    <div class="login">
+      <h2>New Password</h2>
       <br/>
       <form @submit.prevent="handleSave">
         <div class="div-responsive">
@@ -27,18 +27,18 @@
           </div>
         </div>
         <div class="div-responsive">
-          <a href="login" class="customLink">Sign In</a>
+          <router-link :to="LOGIN_PATH" class="customLink">Sign In</router-link>
         </div>
         <div class="alert-box div-responsive">
           <Error v-if="error.message!=null" v-bind:message="error.message" />
         </div>
-        <div class="div-responsive">
+        <div class="div-responsive btn-center">
           <button type="submit" class="btn btn-secondary btn-big">Save</button>
         </div>
       </form>
     </div>
-    <Modal ref="modal" message="Your password is reset" />
-    <Loading v-if="loading" />
+    <Modal ref="modal" message="Your password is reset" :redirect="LOGIN_PATH" />
+    <Loading ref="loading" />
   </div>
 </template>
 
@@ -47,9 +47,9 @@ import axios from 'axios'
 import Modal from './Modal'
 import Loading from './Loading'
 import Error from './Error'
+import moment from 'moment'
 import { validEmail } from '../assets/js/utils.js'
-
-const url = 'http://localhost:4081'
+import { URL, LOGIN_PATH } from '../constants/constants'
 
 export default {
   name: 'ResetPassword',
@@ -60,15 +60,14 @@ export default {
   },
   data () {
     return {
-      already: false,
       submitted: false,
-      loading: false,
       error: {
         message : null
       },
       email: null,
       newPass: null,
-      cfPass: null
+      cfPass: null,
+      LOGIN_PATH: LOGIN_PATH
     }
   },
   methods: {
@@ -83,17 +82,17 @@ export default {
           this.error.message = "Email is invalid";
           return false;
         }
-        this.loading = true;
+        // Show loading
+        this.$refs.loading.handleLoading();
 
         setTimeout(() => {
           // Get the list of user
-          axios.get(url + '/users')
+          axios.get(URL + '/users')
           .then(resp => {
               // Get the list of users
               const list = resp.data;
               // Find the user with email
               const user = list.find(x => x.email == this.email);
-              console.log(user);
               // Check the user exist
               if(user != null) {
                 // Check the confirm password and new password must be the same
@@ -101,7 +100,7 @@ export default {
                   // Set new password
                   user.password = this.cfPass;
                   // Change password
-                  axios.put(url + '/users/' + user.id, user)
+                  axios.put(URL + '/users/' + user.id, user)
                   .then(resp => {
                       this.error.message = null;
                       this.loading = false;
@@ -109,25 +108,38 @@ export default {
                       this.newPass = null,
                       this.cfPass = null,
                       this.submitted = false;
+
+                      // Hide loading
+                      this.$refs.loading.handleLoading();
                       // Open message box
-                      this.$refs.modal.show();
+                      this.$refs.modal.handleModal();
+
+                      // Redirect to home page
+                      setTimeout(() => {
+                          this.$refs.modal.handleModal();
+                          window.location = LOGIN_PATH;
+                      }, 3000);
                   }).catch(error => {
                       // Catch error here
                       this.error = error;
-                      this.loading = false;
+                      // Hide loading
+                      this.$refs.loading.handleLoading();
                   });
                 } else {
                   this.error.message = "Confirm password is incorrect";
-                  this.loading = false;
+                  // Hide loading
+                  this.$refs.loading.handleLoading();
                 }
               } else {
                 this.error.message = "Email doesn't exist";
-                this.loading = false;
+                // Hide loading
+                this.$refs.loading.handleLoading();
               }
           }).catch(error => {
               // Catch error here
               this.error = error;
-              this.loading = false;
+              // Hide loading
+              this.$refs.loading.handleLoading();
           });
         }, 500);
       }

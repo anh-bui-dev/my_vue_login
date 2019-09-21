@@ -1,10 +1,10 @@
 /* eslint-disable */
 <template>
-  <div id="container">
-    <div id="login">
-      <h1>Sign In</h1>
+  <div class="container">
+    <div class="login">
+      <h2>Log In</h2>
       <br/>
-      <form @submit.prevent="handleLogin">
+      <form @submit.prevent="handleLogIn">
         <div class="div-responsive">
           <label for="email">Email:</label>
           <input type="text" v-model="email" @change="handleChange" placeholder="Email" class="form-control" :class="{ 'is-invalid': submitted && !email }" />
@@ -20,18 +20,18 @@
           </div>
         </div>
         <div class="div-responsive">
-          <a href="reset_password" class="customLink">Want to reset password ?</a>
+          <router-link :to="RESET_PASSWORD_PATH" class="customLink">Want to reset password ?</router-link>
         </div>
         <div class="alert-box div-responsive">
           <Error v-if="error.message!=null" v-bind:message="error.message" />
         </div>
-        <div class="div-responsive">
-          <button type="submit" class="btn btn-secondary btn-big">Login</button>
+        <div class="div-responsive btn-center">
+          <button type="submit" class="btn btn-secondary btn-big">Log In</button>
         </div>
       </form>
     </div>
-    <Modal ref="modal" message="Logged In" :user ="user" />
-    <Loading v-if="loading" />
+    <Modal ref="modal" message="Logged In" :redirect="HOME_PATH" />
+    <Loading ref="loading" />
   </div>
 </template>
 
@@ -40,12 +40,12 @@ import axios from 'axios'
 import Modal from './Modal'
 import Loading from './Loading'
 import Error from './Error'
+import moment from 'moment'
 import { validEmail } from '../assets/js/utils.js'
-
-const url = 'http://localhost:4081'
+import { URL, HOME_PATH, RESET_PASSWORD_PATH } from '../constants/constants'
 
 export default {
-  name: 'Login',
+  name: 'LogIn',
   components: {
       Modal,
       Loading,
@@ -54,17 +54,18 @@ export default {
   data () {
     return {
       submitted: false,
-      loading: false,
       error: {
         message : null
       },
       email: null,
       password: null,
-      user: {}
+      user: {},
+      HOME_PATH: HOME_PATH,
+      RESET_PASSWORD_PATH: RESET_PASSWORD_PATH
     }
   },
   methods: {
-    handleLogin () {
+    handleLogIn () {
       // Flag submitted
       this.submitted = true;
 
@@ -75,12 +76,13 @@ export default {
           this.error.message = "Email is invalid";
           return false;
         }
-        this.loading = true;
+        // Show loading
+        this.$refs.loading.handleLoading();
 
         // Assume the request will be a half of second
         setTimeout(() => {
           // Get the list of user
-          axios.get(url + '/users')
+          axios.get(URL + '/users')
           .then(resp => {
               const list = resp.data;
               // Find the user with email
@@ -95,20 +97,37 @@ export default {
                   this.email = null;
                   this.password = null,
                   this.submitted = false;
+
+                  // Session storage user
+                  const expiresAt = moment(new Date()).add(30, 'm').toDate();
+                  user.expiresAt = expiresAt;
+                  sessionStorage.setItem('user', JSON.stringify(user));
+
+                  // Hide loading
+                  this.$refs.loading.handleLoading();
                   // Open message box
-                  this.$refs.modal.show();
+                  this.$refs.modal.handleModal();
+
+                  // Redirect to home page
+                  setTimeout(() => {
+                      this.$refs.modal.handleModal();
+                      window.location = HOME_PATH;
+                  }, 3000);
                 } else {
                   this.error.message = "Password is incorrect";
-                  this.loading = false;
+                  // Hide loading
+                  this.$refs.loading.handleLoading();
                 }
               } else {
                 this.error.message = "Email doesn't exist";
-                this.loading = false;
+                // Hide loading
+                this.$refs.loading.handleLoading();
               }
           }).catch(error => {
               // Catch error here
               this.error = error;
-              this.loading = false;
+              // Hide loading
+              this.$refs.loading.handleLoading();
           });
         }, 500);
       }
