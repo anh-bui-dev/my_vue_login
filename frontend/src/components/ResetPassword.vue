@@ -27,7 +27,7 @@
           </div>
         </div>
         <div class="div-responsive">
-          <router-link :to="LOGIN_PATH" class="customLink">Sign In</router-link>
+          <router-link :to="LOG_IN_PATH" class="customLink">Log In</router-link>
         </div>
         <div class="alert-box div-responsive">
           <Error v-if="error.message!=null" v-bind:message="error.message" />
@@ -37,7 +37,7 @@
         </div>
       </form>
     </div>
-    <Modal ref="modal" message="Your password is reset" :redirect="LOGIN_PATH" />
+    <Modal ref="modal" message="Your password is reset" :redirect="LOG_IN_PATH" />
     <Loading ref="loading" />
   </div>
 </template>
@@ -49,7 +49,7 @@ import Loading from './Loading'
 import Error from './Error'
 import moment from 'moment'
 import { validEmail } from '../assets/js/utils.js'
-import { URL, LOGIN_PATH } from '../constants/constants'
+import { URL, LOG_IN_PATH } from '../constants/constants'
 
 export default {
   name: 'ResetPassword',
@@ -67,7 +67,7 @@ export default {
       email: null,
       newPass: null,
       cfPass: null,
-      LOGIN_PATH: LOGIN_PATH
+      LOG_IN_PATH: LOG_IN_PATH
     }
   },
   methods: {
@@ -117,7 +117,7 @@ export default {
                       // Redirect to home page
                       setTimeout(() => {
                           this.$refs.modal.handleModal();
-                          window.location = LOGIN_PATH;
+                          window.location = LOG_IN_PATH;
                       }, 3000);
                   }).catch(error => {
                       // Catch error here
